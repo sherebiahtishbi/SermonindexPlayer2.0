@@ -140,15 +140,42 @@ function avOrIOaction(e) {
             return;
         } else {
             elemCurrentPlayingCell = e.currentTarget.children[0];
-            if (media != undefined && !media.paused && media.src.replace('file://', '') == filepath) {
-                media.pause();
-                elemCurrentPlayingCell.innerHTML = playIcon;
-                $('#btnStopMedia i').toggleClass('fa-play fa-pause');
-            } else {
+            if (media == undefined) {
+                playMedia(filepath, sermonTitle, 0);
                 logger.info('Now will play [' + filepath + ']');
                 elemCurrentPlayingCell.innerHTML = pauseIcon;
-                (media == undefined) ? playMedia(filepath, sermonTitle, 0) : media.play();
+            } else {
+                if (media.paused) {
+                    if (media.src.replace('file://','') == filepath) {
+                        media.play();
+                        logger.info('Unpaused [' + filepath + ']');
+                        elemCurrentPlayingCell.innerHTML = pauseIcon;
+                    } else {
+                        playMedia(filepath, sermonTitle, 0);
+                        logger.info('Now will play [' + filepath + ']');
+                        elemCurrentPlayingCell.innerHTML = pauseIcon;
+                    }
+                } else {
+                    if (media.src.replace('file://','') == filepath) {
+                        media.pause();
+                        logger.info('Paused [' + filepath + ']');
+                        elemCurrentPlayingCell.innerHTML = playIcon;
+                    } else {
+                        playMedia(filepath, sermonTitle, 0);
+                        logger.info('Now will play [' + filepath + ']');
+                        elemCurrentPlayingCell.innerHTML = pauseIcon;
+                    }                    
+                }
             }
+            // if (media != undefined && !media.paused && media.src.replace('file://', '') == filepath) {
+            //     media.pause();
+            //     elemCurrentPlayingCell.innerHTML = playIcon;
+            //     $('#btnStopMedia i').toggleClass('fa-play fa-pause');
+            // } else {
+            //     logger.info('Now will play [' + filepath + ']');
+            //     elemCurrentPlayingCell.innerHTML = pauseIcon;
+            //     (media == undefined) ? playMedia(filepath, sermonTitle, 0) : media.play();
+            // }
         }
     } else {
         console.log("Download :" + filepath);
