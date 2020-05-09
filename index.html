@@ -17,27 +17,15 @@ Change Log      : None
     <body>
         <div class="container-fluid">
             <div class="row">
-                <!-- <div class="col-md-12">
-                    <img src="images/sermonindex-logo1.png" alt="logo">
-                    <h2>Sermon Downloader 2.0 by sermonindex.net</h2>
-                </div> -->
                 <nav class="navbar col-md-12 app-header">
                     <span><img src="images/sermonidex-top-large-2.png" class="d-inline-block align-top" alt=""></span>
-                    <!-- <div id="divLogo" class="col-md-2 col-sm-4 text-center">
-                        <div class="logoLine1">
-                            sermon
-                        </div>
-                        <div class="logoLine1">
-                            <h1>sermon</h1>
-                        </div> 
-                    </div> -->
                     <span class="app-title"><h2>Sermon Downloader 2.0</h2></span>
                 </nav>
             </div>
             <div class="row">
-                <div class="col-md-4 speakermenu">
+                <!-- Speakers listing -->
+                <div class="col col-md-4 speakermenu">
                     <div class="navbar section-title text-center">
-                        <!-- <h5>Speakers</h5> -->
                         <div id="divSpeakerlist" class="navbar-brand">Speakers</div>
                     </div>
                     <div class="form-group mb-2 no-bottom-margin">
@@ -45,11 +33,6 @@ Change Log      : None
                     </div>
                     <div class="overflow-container">
                         <table id="tblSpeakers" class="table">
-                            <!-- <thead>
-                                <tr>
-                                    <th>Speakers</th>
-                                </tr>
-                            </thead>                                 -->
                         </table>                    
                     </div>
                     <div id="divSpeakerStatus" class="statusBar">
@@ -58,14 +41,14 @@ Change Log      : None
                         </div>
                     </div>
                 </div>
-                <div class="col-md-8">
+                <!-- Sermons listing -->
+                <div class="col col-md-8">
                     <div class="navbar section-title text-center">
-                        <!-- <h5>Sermons</h5> -->
                         <div id="divSermonlist" class="navbar-brand">Sermons</div>
                         <div class="form-inline">
-                            <button id="btnOpenFolder" class="btn btn-secondary" data-toggle="tooltip" data-placement="left" title="Open sermon folder ">
+                            <!-- <button id="btnOpenFolder" class="btn btn-secondary" data-toggle="tooltip" data-placement="left" title="Open sermon folder ">
                                 <i class="fas fa-folder-open"></i>
-                            </button>
+                            </button> -->
                             <span>&nbsp;</span>
                             <button id="btnDownloadAll" class="btn btn-secondary" data-toggle="tooltip" data-placement="left" title="click to download all sermons of this speaker" disabled>
                                 <i class="fas fa-download"></i>
@@ -98,30 +81,8 @@ Change Log      : None
                         </div>
                     </div>
                 </div>
-                <!-- Modal start -->
-                <!-- Uncomment this block to show audio popup -->
-                <!-- <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="exampleModalLabel">Sermon Title Here</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body" >
-                                <h5 id="h5title">Put Siriwave here</h5>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-primary">Save changes</button>
-                            </div>
-                        </div>
-                    </div>
-                </div> -->
-                <!-- Modal End -->
             </div>
+            <!-- Audio panel  -->
             <div class="row text-center">
                 <div class="col-md-12 text-center audio-panel">
                     <div>
@@ -135,6 +96,7 @@ Change Log      : None
                 </div>
             </div>
         </div>
+        <!-- footer -->
         <footer>
             <div class="fixed-bottom">
                 <div class="col-md-12 footer-content">
@@ -153,7 +115,6 @@ Change Log      : None
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
             integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
             crossorigin="anonymous"></script>
-        <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.3/howler.js"></script> -->
         <script src="js/index.js"></script>
     </body>
 </html>

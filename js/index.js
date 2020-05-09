@@ -1,8 +1,8 @@
 /*
 Author      : Sherebiah Tisbi
 Datw Written: 04/27/2020
-Goal        : script pertains to index.html
-Change Log  : None
+Goal        : script pertains to index.html and caontains the code for almost entire app
+Change Log  : 05/09/2020 - MP3 duration for each download call
 */
 const needle = require('needle');
 const download = require('download');
@@ -11,10 +11,9 @@ const fs = require('fs');
 const { ipcRenderer } = require('electron')
 const logger = require('electron-log');
 
-
-
 var speakerData, sermonData, speakerFolder, audio, audioDuration, playbar, media, currentMediaLocation;
-var elemTrack, elemSpeakerSearch, elemSermonSearch, elemSermonStatus, elemSpeakerAlert, elemSpeakerTable, elemSermonTable, elemDownloadAllButton, elemPlayAlert, elemOpenFolderButton, elemCurrentPlayingCell; 
+// var elemTrack, elemSpeakerSearch, elemSermonSearch, elemSermonStatus, elemSpeakerAlert, elemSpeakerTable, elemSermonTable, elemDownloadAllButton, elemPlayAlert, elemOpenFolderButton, elemCurrentPlayingCell; 
+var elemCurrentPlayingCell, elemMediaButton; 
 var sermonbasepath = os.homedir() + '/SermonIndex_Sermons/';
 var playIcon = "<i class='fas fa-play'></i>";
 var pauseIcon = "<i class='fas fa-pause'></i>";
@@ -32,6 +31,7 @@ $(document).ready(function () {
     logger.info('GUI is initialized.');
     $("#divSermonStatus").hide();
     track = $("#mediaBar");
+    mediaButton = $('#btnStopMedia');
 
     var apiUrl = 'https://api.sermonindex.net/audio/speaker/_sermonindex.json';
     var options = {
@@ -94,9 +94,12 @@ $("#btnDownloadAll").click(function () {
             downloadSermon(url, sermonpath, sermonfilename, index, sermontitle)
                 .then((res) => {
                     sermonsFromTable[res.index].children[0].outerHTML = "<span class='sermon-available'>" + playIcon + "</span>";
-                    // $("#spanPlayAlert").html(successIcon + " Completed downloading > " + sermontitle);
+                    getMp3Duration(sermonpath + sermonfilename, undefined)
+                        .then((duration) => {
+                            sermonsFromTable[res.index].parentElement.children[4].innerHTML = duration;
+                            logger.info('MP3 duration calculated successfully for > ' + sermonfilename);
+                        });
                     $("#spanPlayAlert").html(successIcon + " completed downloading [" + ++downloadedSermons + " of " + totalSermons + " ]");
-                    console.log('Download complete...');
                     logger.info('Downloaded......' + sermonpath);
                 })
                 .catch((err) => {
@@ -109,7 +112,10 @@ $("#btnDownloadAll").click(function () {
     }
 });
 
-
+$("#mediaBar").on('change', (e) => { 
+    console.log("User changed the media location to >" + e.currentTarget.value);
+    if (media != undefined) media.currentTime = e.currentTarget.value;
+});
 
 //opens sermon folder
 $("#btnOpenFolder").click(function () { 
@@ -139,43 +145,40 @@ function avOrIOaction(e) {
             logger.info('not an autio format.');
             return;
         } else {
+            if (elemCurrentPlayingCell != undefined) elemCurrentPlayingCell.innerHTML = playIcon;
             elemCurrentPlayingCell = e.currentTarget.children[0];
             if (media == undefined) {
                 playMedia(filepath, sermonTitle, 0);
                 logger.info('Now will play [' + filepath + ']');
                 elemCurrentPlayingCell.innerHTML = pauseIcon;
+                $('i', mediaButton).addClass('fa-pause').removeClass('fa-play');
             } else {
                 if (media.paused) {
                     if (media.src.replace('file://','') == filepath) {
                         media.play();
                         logger.info('Unpaused [' + filepath + ']');
                         elemCurrentPlayingCell.innerHTML = pauseIcon;
+                        $('i', mediaButton).addClass('fa-pause').removeClass('fa-play');
                     } else {
                         playMedia(filepath, sermonTitle, 0);
                         logger.info('Now will play [' + filepath + ']');
                         elemCurrentPlayingCell.innerHTML = pauseIcon;
+                        $('i', mediaButton).addClass('fa-pause').removeClass('fa-play');
                     }
                 } else {
                     if (media.src.replace('file://','') == filepath) {
                         media.pause();
                         logger.info('Paused [' + filepath + ']');
                         elemCurrentPlayingCell.innerHTML = playIcon;
+                        $('i', mediaButton).addClass('fa-play').removeClass('fa-pause');
                     } else {
                         playMedia(filepath, sermonTitle, 0);
                         logger.info('Now will play [' + filepath + ']');
                         elemCurrentPlayingCell.innerHTML = pauseIcon;
+                        $('i', mediaButton).addClass('fa-pause').removeClass('fa-play');
                     }                    
                 }
             }
-            // if (media != undefined && !media.paused && media.src.replace('file://', '') == filepath) {
-            //     media.pause();
-            //     elemCurrentPlayingCell.innerHTML = playIcon;
-            //     $('#btnStopMedia i').toggleClass('fa-play fa-pause');
-            // } else {
-            //     logger.info('Now will play [' + filepath + ']');
-            //     elemCurrentPlayingCell.innerHTML = pauseIcon;
-            //     (media == undefined) ? playMedia(filepath, sermonTitle, 0) : media.play();
-            // }
         }
     } else {
         console.log("Download :" + filepath);
@@ -187,6 +190,11 @@ function avOrIOaction(e) {
             .then((res) => { 
                 e.currentTarget.children[0].outerHTML = "<span class='sermon-available'>" + playIcon + "</span>";
                 $("#spanPlayAlert").html(successIcon + " completed downloading [ " + sermonTitle + " ]");
+                getMp3Duration(folderpath + filename, undefined)
+                    .then((duration) => {
+                        e.currentTarget.parentElement.children[4].innerHTML = duration;
+                        logger.info('MP3 duration calculated successfully for > ' + filename);                        
+                    });
                 console.log('Download complete...');
                 logger.info('Sermon ['+ sermonTitle +'] downloaded successfully');
             })
@@ -202,9 +210,8 @@ $('#btnStopMedia').click(() => {
     if (media != undefined) {
         (media.paused) ? media.play() : media.pause();
     } 
-    var mediaButton = $('#btnStopMedia i');
-    mediaButton.toggleClass('fa-play fa-pause');
-    (mediaButton.attr('class') == 'fas fa-play') ? elemCurrentPlayingCell.innerHTML = playIcon : elemCurrentPlayingCell.innerHTML = pauseIcon;
+    $('i',mediaButton).toggleClass('fa-play fa-pause');
+    ($('i', mediaButton).attr('class') == 'fas fa-play') ? elemCurrentPlayingCell.innerHTML = playIcon : elemCurrentPlayingCell.innerHTML = pauseIcon;
 });
 
 function playMedia(sermonToPlay, sermontitle) {
@@ -221,7 +228,13 @@ function playMedia(sermonToPlay, sermontitle) {
 
     media.addEventListener('play', (e) => { 
         console.log('Unpaused.');
+        // $('#btnStopMedia i').toggleClass('fa-play fa-pause');
+    });
 
+    // check when audio finished playing 
+    media.addEventListener('ended', (e) => { 
+        elemCurrentPlayingCell.innerHTML = playIcon;
+        console.log('Audio finished playing.');
     });
 
     //assign the media labels
@@ -235,7 +248,7 @@ function playMedia(sermonToPlay, sermontitle) {
     media.addEventListener('timeupdate', (e) => { 
         var cTime = e.currentTarget.currentTime;
         track.val(cTime);
-        $("#spanAudioStatus").text('[ ' + (cTime/60).toFixed(2) + ' / ' + (audioDuration/60).toFixed(2) + ' ]');
+        $("#spanAudioStatus").text('[ ' + (cTime / 60).toFixed(2) + ' / ' + (audioDuration / 60).toFixed(2) + ' ]');
     });
 }
 
@@ -522,25 +535,3 @@ function formattedName(name)
     logger.info('formattedName()->Exited.');
     return speakername;
 }
-
-/* Need to work on this further to get the audio duration before file is downloaded */
-function getAudioDuration(audiofile) {
-    var q = $.Deferred();
-    var duration;
-
-    var audioElement = $("divAudio");
-    audioElement.src = audiofile;
-
-    audioElement.on("canplaythrough", (e) => { 
-        try {
-            duration = e.currentTarget.duration;
-            console.log(duration);
-            q.resolve(duration);
-        }
-        catch{
-            q.reject(-1);
-        }
-    });
-    return q.promise();
-}
-

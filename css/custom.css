@@ -3,6 +3,16 @@ body {
     /* border: 6px solid #00000069; */
 }
 
+.leftmenu {
+    height: 100%;
+    top: 0;
+    left: 0;
+    position: fixed;
+    width: 250px;
+    margin-left: 0px;
+    background-color: rgba(240,240,240,.5);
+}
+
 .speakermenu {
     /* background-color: #7a7a4b; */
     height: 100%;
@@ -199,14 +209,15 @@ footer {
   -webkit-appearance: none;
   width: 70%;
   height: 5px;
-  background: #495057;
+  background: #00000069;
   outline: none;
-  opacity: 0.7;
+  /* opacity: 0.7; */
   border-radius: 3px;
 }
 
 .slider:hover {
-    opacity: 1;
+    cursor: pointer;
+    height: 10px;
 }
 
 /* .slider::-webkit-slider-runnable-track {
@@ -222,13 +233,18 @@ footer {
     border: none;
     height: 10px;
     width: 10px;
-    border-radius: 1px;
+    border-radius: 50%;
     background: whitesmoke;
-    margin-top: -2px; 
+    margin-top: -1px; 
 }
 
 .slider::-webkit-slider-thumb:hover {
     cursor: pointer;
+    height: 15px;
+    width: 15px;
+    margin-top: -2;
+    background-color: black;
+    border: 1px solid whitesmoke;
 }
 
 .audiostatus {
