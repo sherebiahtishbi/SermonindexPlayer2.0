@@ -7,9 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "package-linux": "electron-packager . sermon-downloader-2.0 --overwrite --asar --platform=linux --arch=x64 --icon=images/sermonindex-logo.png --out=release-builds",
-    "create-debian-installer": "electron-installer-debian --overwrite --src release-builds/sermon-downloader-2.0-linux-x64/ --arch amd64 --icon=images/sermonindex-logo.png --config debian.json",
-    "package-mac": "electron-packager . sermon-downloader-2.0 --overwrite --platform=darwin --arch=x64 --out=release-builds --icon=images/sermonindex-logo.icns",
+    "package-linux": "electron-packager . sermondownloader2.0 --overwrite --asar --platform=linux --arch=x64 --icon=images/sermonindex-logo.png --out=release-builds",
+    "create-debian-installer": "electron-installer-debian --overwrite --src release-builds/sermondownloader2.0-linux-x64/ --arch amd64 --icon=images/sermonindex-logo.png --config debian.json",
+    "package-mac": "electron-packager . sermondownloader2.0 --overwrite --platform=darwin --arch=x64 --out=release-builds --icon=images/sermonindex-logo.icns",
     "create-mac-installer": "electron-installer-dmg ./release-builds/sermon-downloader-2.0-darwin-x64/sermon-downloader-2.0.app sermon-downloader-2.0 --out=release-builds --overwrite --icon=images/sermonindex-logo.icns",
     "package-win": "electron-packager . sermon-downloader-2 --overwrite --asar --icon=images/sermonindex-logo.ico --out=release-builds"
   },
