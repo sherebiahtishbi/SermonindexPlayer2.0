@@ -25,8 +25,9 @@ var successIcon = "<i class='far fa-check-circle'></i>";
 var failIcon = "<i class='far fa-exclamation-circle'></i>";
 var speakerIcon = "<i class='fas fa-user'></i>";
 var pdfIcon = "<i class='far fa-file-pdf'></i>";
-var iconSortasc = "<i class='fas fa-sort-up'></i>";
-var iconSortdes = "<i class='fas fa-sort-down'></i>";
+var iconSortasc = "<i class='fas fa-sort-alpha-up'></i>";
+var iconSortdes = "<i class='fas fa-sort-alpha-down-alt'></i>";
+var iconTopic = "<i class='fas fa-file-alt'></i>"
 
 $(document).ready(function () {
     //alert('I am ready to roll!');
@@ -45,10 +46,10 @@ $(document).ready(function () {
     speakerSortorder = "asc";
 
     loadSpeakers();
-    loadTopics();
+    // loadTopics();
 
     $("#tblSpeakers").on('click', 'tr td', loadSermons);
-    $("#tblTopics").on('click', 'tr td', loadTopicSermons);
+    // $("#tblTopics").on('click', 'tr td', loadTopicSermons);
 
     $("#tblSermons").on('click', 'tbody td:first-child', avOrIOaction);
     $("#tblSermons").on('click', 'tbody td:nth-child(3)', showSermonDescription);
@@ -63,17 +64,22 @@ $(document).ready(function () {
 $(".sortable").click((e) => { 
     var elem = e.currentTarget;
 
+    $('span[class*="sort"]', elem.parentElement).removeClass().addClass('sortInactive');
+ 
     if (elem.innerText.toLowerCase().indexOf("topic") >= 0) sermonSortCol = 'topic';
     if (elem.innerText.toLowerCase().indexOf("title") >= 0) sermonSortCol = 'title';
     if (elem.innerText.toLowerCase().indexOf("format") >= 0) sermonSortCol = 'format';
 
+    $('span', elem).removeClass('sortInactive').addClass('sortActive');
+    
     if (sermonSortorder == 'asc') { 
-        elem.innerHTML = "<span class='sortActive'>" + iconSortdes + "</span > " + sermonSortCol;
+        $('span', elem).html(iconSortdes);
         sermonSortorder = 'des';
     } else {
-        elem.innerHTML = "<span class='sortActive'>" + iconSortasc + "</span > " + sermonSortCol;
+        $('span', elem).html(iconSortasc);
         sermonSortorder = 'asc';
     }
+
     var searchString = $('#txtsermonsearch').text();
     (currentTab == 'Speakers')
         ? populateSermons(searchString, sermonData).then((res) => { renderSermonTable(res); })
@@ -81,10 +87,28 @@ $(".sortable").click((e) => {
 });
 
 
-$("#ulCateory li a").click((e) => { 
-    currentTab = e.currentTarget.innerText;
+$("#ulCateory li").click((e) => { 
+    
+    var tmpTab = e.currentTarget.innerText.replace(/\s/g,'');
+    if (currentTab == tmpTab) return;
+
+    currentTab = e.currentTarget.innerText.replace(/\s/g, '');
+    $('li[class*="cat"]').removeClass('catActive').addClass('catInactive');
+    e.currentTarget.classList.add('catActive')
+    e.currentTarget.classList.remove('catInactive');
     $('#txtsermonsearch').text('');
     $('#txtsearch').text('');
+    switch (currentTab) {
+        case "Speakers":
+            loadSpeakers();
+            break;
+        case "Topics":
+            loadTopics();
+            break;
+        case "Playlist":
+            loadPlaylist();
+        default:
+    }
 });
 
 function showSermonDescription(e) {
@@ -111,7 +135,7 @@ function loadTopics() {
             console.log(response);
             topicData = response.body
 
-            var topictitle = "Topics (" + Object.keys(response.body).length + ")";
+            var topictitle = iconTopic + " Topics (" + Object.keys(response.body).length + ")";
             $('#divSpeakerlist').html(topictitle);
             logger.info('Total topics :' + Object.keys(response.body).length + ', now will populating them.');
             populateTopics('');
@@ -142,7 +166,7 @@ function loadSpeakers()
             console.log(response);
             speakerData = response.body
 
-            var speakertitle = "Speakers (" + Object.keys(response.body).length + ")";
+            var speakertitle = speakerIcon + " Speakers (" + Object.keys(response.body).length + ")";
             $('#divSpeakerlist').html(speakertitle);
             logger.info('Total speakers :' + Object.keys(response.body).length + ', now will populating them.');
             populateSpeakers('');
@@ -417,21 +441,35 @@ function loadSermons(e) {
     logger.info('loadSermons()->Entered.');
     
     $("#divSermonStatus").show();
-    var speaker = e.currentTarget.attributes['data-speaker'].value;
-    var speakerName = e.currentTarget.innerText;
-    speakerFolder = sermonbasepath + speaker + "/";
-    var apiUrl = 'https://api.sermonindex.net/audio/speaker/';
-    apiUrl += speaker + '.json';
+    var apiUrl;
+    switch (currentTab) {
+        case "Speakers":
+            var speaker = e.currentTarget.attributes['data-speaker'].value;
+            var speakerName = e.currentTarget.innerText;
+            speakerFolder = sermonbasepath + speaker + "/";
+            apiUrl = 'https://api.sermonindex.net/audio/speaker/' + speaker + ".json";
+            console.log(apiUrl);
+            logger.info('loadSermons()->Fetching sermons using sermonindex API for speaker >' + speakerName);
+            $("#spanPlayAlert").html(spinnerIcon + " Loading Sermons of  > " + speakerName);
+            $("#spanSpeakerAlert").html("<b>Selected :</b> [" + speakerName + "]");
+            break;
+        case "Topics":
+            var topic = e.currentTarget.attributes['data-topic'].value;
+            var topicName = e.currentTarget.innerText;
+            var apiUrl = 'https://api.sermonindex.net/audio/topic/' + topic + '.json';
+            console.log(apiUrl);
+            logger.info('loadSermons()->Fetching sermons using sermonindex API for speaker >' + speakerName);
+            $("#spanPlayAlert").html(spinnerIcon + " Loading Sermons on  > " + topicName);
+            $("#spanSpeakerAlert").html("<b>Selected :</b> [" + topicName + "]");            break;
+        case "Playlist":
+            default:
+     }
     var options = {
         follow_max: 5,
         headers: {
             "Content-Type":"application/json"
         }
     }
-    console.log(apiUrl);
-    logger.info('loadSermons()->Fetching sermons using sermonindex API for speaker >' + speakerName);
-    $("#spanPlayAlert").html(spinnerIcon + " Loading Sermons of  > " + speakerName);
-    $("#spanSpeakerAlert").html("<b>Selected :</b> [" + speakerName +"]");
     needle('get', apiUrl, options)
         .then(function (response) {
             console.log(response);
@@ -450,7 +488,7 @@ function loadSermons(e) {
         .catch(function (error) {
             alert('Error : could not fetch the data from sermnindex.net');
             console.log(error);
-            logger.error('Error fetching sermons from sermonindex for : ' + speaker+'\\nError : '+ error);
+            logger.error('Error :  could not fetch the data from sermnindex.net > '+ error);
         });
     logger.info('loadSermons()->Exited.');
 }
@@ -462,48 +500,6 @@ function renderSermonTable(html) {
     $("#btnDownloadAll").html(downloadIcon + " (" + countDownload + ")");
     // $('[data-toggle="tooltip"]').tooltip();
     loadMp3Duration(sermonTable);    
-}
-
-//Handles the click event of a table cell from topic list
-function loadTopicSermons(e) {
-    logger.info('loadSermons()->Entered.');
-
-    $("#divSermonStatus").show();
-    var topic = e.currentTarget.attributes['data-topic'].value;
-    var topicName = e.currentTarget.innerText;
-    var apiUrl = 'https://api.sermonindex.net/audio/topic/';
-    apiUrl += topic + '.json';
-    var options = {
-        follow_max: 5,
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }
-    console.log(apiUrl);
-    logger.info('loadTopics()->Fetching sermons using sermonindex API for topic >' + topicName);
-    $("#spanPlayAlert").html(spinnerIcon + " Loading Sermons on  > " + topicName);
-    $("#spanSpeakerAlert").html("<b>Selected :</b> [" + topicName + "]");
-    needle('get', apiUrl, options)
-        .then(function (response) {
-            console.log(response);
-            topicSemonsData = response.body.sermons;
-            var sermonListTitle = "<h5>Sermons on " + topicName + " (" + topicSemonsData.length + ")</h5>";
-            $('#divSermonlist').html(sermonListTitle);
-            logger.info('loadTopicSermons()->Sermons successfully fetched from sermoindex for topic>' + topicName);
-            populateSermons('',topicSemonsData)
-                .then((res) => {
-                    renderSermonTable(res);
-                })
-                .catch(() => {
-                    logger.log("ERROR: error populating sermons!");
-                });
-        })
-        .catch(function (error) {
-            alert('Error : could not fetch the data from sermnindex.net');
-            console.log(error);
-            logger.error('Error fetching sermons from sermonindex for : ' + speaker + '\\nError : ' + error);
-        });
-    logger.info('loadTopicSermons()->Exited.');
 }
 
 //search speakers as user type in search box
@@ -597,7 +593,7 @@ function populateTopics(txt) {
         html = "<tr><td>Sorry, No data!</td></tr>";
         logger.info('populateTopics()->Sorry, No data!');
     } else {
-        $("#tblTopics").html(html);
+        $("#tblSpeakers").html(html);
         logger.info('populateTopics()->dynamic html generated and popultated in GUI.');
     }
     logger.info('populateTopics()->exited.');

@@ -67,47 +67,42 @@ Change Log      : None
                 </nav>
             </div>
             <div id="divSermonArea" class="row">
-                <!-- Speakers listing -->
+                <!-- Speakers/Topics/Playlist listing -->
                 <div class="col col-md-4 speakermenu">
-                    <!-- <div class="navbar section-title text-center">
-                        <div id="divSpeakerlist" class="navbar-brand">Speakers</div>
-                    </div> -->
-                    <ul class="nav nav-tabs speaker-tab-bar" id="ulCateory" role="tablist">
-                        <li class="nav-item speaker-tab">
-                            <a class="nav-link active" id="speaker-tab" data-toggle="tab" href="#divSpeakers" role="tab" aria-controls="home"
-                                aria-selected="true">Speakers</a>
-                        </li>
-                        <li class="nav-item speaker-tab">
-                            <a class="nav-link" id="topic-tab" data-toggle="tab" href="#divTopics" role="tab" aria-controls="profile"
-                                aria-selected="false">Topics</a>
-                        </li>
-                        <li class="nav-item speaker-tab">
-                            <a class="nav-link" id="speaker-tab" data-toggle="tab" href="#contact" role="tab" aria-controls="contact"
-                                aria-selected="false">Scripture</a>
-                        </li>
-                    </ul>
-                    <div class="form-group mb-2 no-bottom-margin">
-                        <input type="text" class="form-control no-radius sd-control sd-input" id="txtsearch"
-                            placeholder="Type here to Search">
+                    <div id="divCategories" class="catTab">
+                        <ul class="speaker-tab-bar" id="ulCateory" role="tablist">
+                            <li class="cat-item speaker-tab catActive">
+                                <span>Speakers</span>
+                                <span class='tabIcon'><i class='fas fa-user'></i></span>
+                            </li>
+                            <li class="cat-item speaker-tab catInactive">
+                                <span>Topics</span>
+                                <span class='tabIcon'><i class='fas fa-file-alt'></i></span>
+                            </li>
+                            <li class="cat-item speaker-tab catInactive">
+                                <span>Playlist</span>
+                                <span class='tabIcon'><i class='fas fa-headphones'></i></span>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="tab-content" id="myTabContent">
+                    <div id='divListings' class='catContent'>
+                        <div class="navbar section-title text-center">
+                            <div id="divSpeakerlist" class="navbar-brand">Speakers</div>
+                        </div>
+                        <div class="form-group mb-2 no-bottom-margin">
+                            <input type="text" class="form-control no-radius sd-control sd-input" id="txtsearch"
+                                placeholder="Type here to Search">
+                        </div>
                         <div class="tab-pane fade show active" id="divSpeakers" role="tabpanel" aria-labelledby="speaker-tab">
                             <div class="overflow-container">
                                 <table id="tblSpeakers" class="table">
                                 </table>
                             </div>
                         </div>
-                        <div class="tab-pane fade" id="divTopics" role="tabpanel" aria-labelledby="topic-tab">
-                            <div class="overflow-container">
-                                <table id="tblTopics" class="table">
-                                </table>
+                        <div id="divSpeakerStatus" class="statusBar">
+                            <div id="divSpeakeralert" class="alert alert-play" role="alert">
+                                <span id="spanSpeakerAlert"></span>
                             </div>
-                        </div>
-                        <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="speaker-tab">...</div>
-                    </div>
-                    <div id="divSpeakerStatus" class="statusBar">
-                        <div id="divSpeakeralert" class="alert alert-play" role="alert">
-                            <span id="spanSpeakerAlert"></span>
                         </div>
                     </div>
                 </div>
@@ -146,13 +141,13 @@ Change Log      : None
                                         </span>
                                     </th>
                                     <th id="cellTopicSpeaker" width=20% class="sortable">
-                                        <span class='sortActive'><i class='fas fa-sort-up'></i></span>&nbsp;Topic/Speaker
+                                        <span class='sortInactive'><i class='fas fa-sort-alpha-up'></i></span>&nbsp;Topic/Speaker
                                     </th>
-                                    <th  id="cellTitle" width=45% class="sortable">
-                                        <span class='sortInactive'><i class='fas fa-sort-up'></i></span>&nbsp;Title
+                                    <th id="cellTitle" width=45% class="sortable">
+                                        <span class='sortActive'><i class='fas fa-sort-alpha-up'></i></span>&nbsp;Title
                                     </th>
                                     <th id="cellFormat" width=15% class="sortable">
-                                        <span class='sortInactive'><i class='fas fa-sort-up'></i></span>&nbsp;Format
+                                        <span class='sortInactive'><i class='fas fa-sort-alpha-up'></i></span>&nbsp;Format
                                     </th>
                                     <th width=10%>Duration</th>
                                 </tr>
