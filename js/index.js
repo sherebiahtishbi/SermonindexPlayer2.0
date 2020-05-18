@@ -11,7 +11,8 @@ const fs = require('fs');
 const { ipcRenderer } = require('electron')
 const logger = require('electron-log');
 
-var speakerData, sermonData, speakerFolder, audio, audioDuration, playbar, media, currentMediaLocation, menuState, countDownload, countPlayable;
+var speakerData, topicData, sermonData, topicSemonsData, speakerFolder, audio, audioDuration, playbar, media
+var currentMediaLocation, menuState, countDownload, countPlayable, currentTab, sermonSortCol, sermonSortorder, speakerSortorder;
 // var elemTrack, elemSpeakerSearch, elemSermonSearch, elemSermonStatus, elemSpeakerAlert, elemSpeakerTable, elemSermonTable, elemDownloadAllButton, elemPlayAlert, elemOpenFolderButton, elemCurrentPlayingCell; 
 var elemCurrentPlayingCell, elemMediaButton; 
 var sermonbasepath = os.homedir() + '/SermonIndex_Sermons/';
@@ -24,6 +25,8 @@ var successIcon = "<i class='far fa-check-circle'></i>";
 var failIcon = "<i class='far fa-exclamation-circle'></i>";
 var speakerIcon = "<i class='fas fa-user'></i>";
 var pdfIcon = "<i class='far fa-file-pdf'></i>";
+var iconSortasc = "<i class='fas fa-sort-up'></i>";
+var iconSortdes = "<i class='fas fa-sort-down'></i>";
 
 $(document).ready(function () {
     //alert('I am ready to roll!');
@@ -36,7 +39,94 @@ $(document).ready(function () {
     menuState = false;
     $("#divFadebody").hide();
     $("#divAbout").hide();
+    currentTab = "Speakers";
+    sermonSortCol = "title";
+    sermonSortorder = "asc";
+    speakerSortorder = "asc";
 
+    loadSpeakers();
+    loadTopics();
+
+    $("#tblSpeakers").on('click', 'tr td', loadSermons);
+    $("#tblTopics").on('click', 'tr td', loadTopicSermons);
+
+    $("#tblSermons").on('click', 'tbody td:first-child', avOrIOaction);
+    $("#tblSermons").on('click', 'tbody td:nth-child(3)', showSermonDescription);
+
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+    
+    // $(document.body).tooltip({ selector: "[title]" });
+});
+
+$(".sortable").click((e) => { 
+    var elem = e.currentTarget;
+
+    if (elem.innerText.toLowerCase().indexOf("topic") >= 0) sermonSortCol = 'topic';
+    if (elem.innerText.toLowerCase().indexOf("title") >= 0) sermonSortCol = 'title';
+    if (elem.innerText.toLowerCase().indexOf("format") >= 0) sermonSortCol = 'format';
+
+    if (sermonSortorder == 'asc') { 
+        elem.innerHTML = "<span class='sortActive'>" + iconSortdes + "</span > " + sermonSortCol;
+        sermonSortorder = 'des';
+    } else {
+        elem.innerHTML = "<span class='sortActive'>" + iconSortasc + "</span > " + sermonSortCol;
+        sermonSortorder = 'asc';
+    }
+    var searchString = $('#txtsermonsearch').text();
+    (currentTab == 'Speakers')
+        ? populateSermons(searchString, sermonData).then((res) => { renderSermonTable(res); })
+        : populateSermons(searchString, topicSemonsData).then((res) => { renderSermonTable(res); });
+});
+
+
+$("#ulCateory li a").click((e) => { 
+    currentTab = e.currentTarget.innerText;
+    $('#txtsermonsearch').text('');
+    $('#txtsearch').text('');
+});
+
+function showSermonDescription(e) {
+    // alert(e.currentTarget.innerText);
+    var elem = e.currentTarget;
+    if (elem.children.length == 3) {
+        $('#divSermondescription', this).toggleClass('hideSermonDescription showSermonDescription');
+    }
+}
+
+function loadTopics() {
+    var apiUrl = 'https://api.sermonindex.net/audio/topic/_sermonindex.json';
+    var options = {
+        headers: {
+            "Content-Type": "application/json"
+        }
+    }
+
+    logger.info('Loadign Topics from sermonindex API.');
+    $("#spanSpeakerAlert").html(spinnerIcon + ' Loading topics.');
+    needle('get', apiUrl, options)
+        .then(function (response) {
+            logger.info('topic JSON received.');
+            console.log(response);
+            topicData = response.body
+
+            var topictitle = "Topics (" + Object.keys(response.body).length + ")";
+            $('#divSpeakerlist').html(topictitle);
+            logger.info('Total topics :' + Object.keys(response.body).length + ', now will populating them.');
+            populateTopics('');
+            $("#spanSpeakerAlert").html(successIcon + " " + Object.keys(response.body).length + ' topics loaded.');
+        })
+        .catch(function (error) {
+            console.log(error);
+            logger.error('error fetching topics from sermonindex.com. Error : ' + error);
+            $("#spanSpeakerAlert").html(failIcon + " Error loading topics.");
+            alert('Error : could not fetch topic data.');
+        });
+}
+
+function loadSpeakers()
+{
     var apiUrl = 'https://api.sermonindex.net/audio/speaker/_sermonindex.json';
     var options = {
         headers: {
@@ -64,15 +154,7 @@ $(document).ready(function () {
             $("#spanSpeakerAlert").html(failIcon + " Error loading speakers.");
             alert('Error : could not fetch speakers data.');
         });
-    $("#tblSpeakers").on('click', 'tr td', loadSermons);
-    $("#tblSermons").on('click', 'tbody td:first-child', avOrIOaction);
-
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip()
-    })
-    
-    // $(document.body).tooltip({ selector: "[title]" });
-});
+}
 
 $("#btnPlayAll").click((e) => { 
     // var sermonsFromTable = $("#tblSermons tbody td:first-child");
@@ -357,14 +439,9 @@ function loadSermons(e) {
             var sermonListTitle = "<h5>Sermons of " + speakerName + " (" + sermonData.length + ")</h5>";
             $('#divSermonlist').html(sermonListTitle);
             logger.info('loadSermons()->Sermons successfully fetched from sermoindex for speaker>' + speakerName);
-            populateSermons('')
+            populateSermons('',sermonData)
                 .then((res) => {
-                    $("#tblSermons tbody").html(res);
-                    logger.info('Sermons poulated successfully!');
-                    var sermonTable = $("#tblSermons tbody");
-                    $("#btnDownloadAll").html(downloadIcon + " (" + countDownload + ")");
-                    // $("#btnPlayAll").html(playIcon + " (" + countPlayable + ")");
-                    loadMp3Duration(sermonTable);
+                    renderSermonTable(res);
                 })
                 .catch(() => {
                     logger.log("ERROR: error populating sermons!");
@@ -378,15 +455,68 @@ function loadSermons(e) {
     logger.info('loadSermons()->Exited.');
 }
 
+function renderSermonTable(html) {
+    $("#tblSermons tbody").html(html);
+    logger.info('Sermons poulated successfully!');
+    var sermonTable = $("#tblSermons tbody");
+    $("#btnDownloadAll").html(downloadIcon + " (" + countDownload + ")");
+    // $('[data-toggle="tooltip"]').tooltip();
+    loadMp3Duration(sermonTable);    
+}
+
+//Handles the click event of a table cell from topic list
+function loadTopicSermons(e) {
+    logger.info('loadSermons()->Entered.');
+
+    $("#divSermonStatus").show();
+    var topic = e.currentTarget.attributes['data-topic'].value;
+    var topicName = e.currentTarget.innerText;
+    var apiUrl = 'https://api.sermonindex.net/audio/topic/';
+    apiUrl += topic + '.json';
+    var options = {
+        follow_max: 5,
+        headers: {
+            "Content-Type": "application/json"
+        }
+    }
+    console.log(apiUrl);
+    logger.info('loadTopics()->Fetching sermons using sermonindex API for topic >' + topicName);
+    $("#spanPlayAlert").html(spinnerIcon + " Loading Sermons on  > " + topicName);
+    $("#spanSpeakerAlert").html("<b>Selected :</b> [" + topicName + "]");
+    needle('get', apiUrl, options)
+        .then(function (response) {
+            console.log(response);
+            topicSemonsData = response.body.sermons;
+            var sermonListTitle = "<h5>Sermons on " + topicName + " (" + topicSemonsData.length + ")</h5>";
+            $('#divSermonlist').html(sermonListTitle);
+            logger.info('loadTopicSermons()->Sermons successfully fetched from sermoindex for topic>' + topicName);
+            populateSermons('',topicSemonsData)
+                .then((res) => {
+                    renderSermonTable(res);
+                })
+                .catch(() => {
+                    logger.log("ERROR: error populating sermons!");
+                });
+        })
+        .catch(function (error) {
+            alert('Error : could not fetch the data from sermnindex.net');
+            console.log(error);
+            logger.error('Error fetching sermons from sermonindex for : ' + speaker + '\\nError : ' + error);
+        });
+    logger.info('loadTopicSermons()->Exited.');
+}
+
 //search speakers as user type in search box
 $('#txtsearch').on('input', function () {
     var txt = $(this).val();
     logger.info('txtsearch>speakerSearch>input handler>applying search.');
     if (txt.length > 0) {
         populateSpeakers(txt);
+        populateTopics(txt);
     }
     else {
         populateSpeakers('');
+        populateTopics('');
     }
 });
 
@@ -396,11 +526,11 @@ $('#txtsermonsearch').on('input', function () {
     logger.info('txtsermonsearch>sermonSearch>input handler>applying search.');
     var searchString;
     (txt.length > 0) ? searchString = txt : searchString = ''; 
-    populateSermons(searchString)
+    populateSermons(searchString,sermonData)
     .then((res) => { 
-        $("#tblSermons tbody").html(res);
+        // $("#tblSermons tbody").html(res);
+        renderSermonTable(res);
         logger.info('Sermons poulated successfully!');
-        
     })
     .catch(() => { 
         logger.info('ERROR : error populating sermons!');
@@ -410,16 +540,19 @@ $('#txtsermonsearch').on('input', function () {
 /* Fetch all mp3 durations */
 function getMp3Duration(mediafile, elementToUpdate) {
     var q = $.Deferred();
-    if (!fs.existsSync(mediafile)) q.reject("0.00");
-    var tmpMedia = new Audio(mediafile);
-    tmpMedia.oncanplaythrough = (e) => {
-        try {
-            var tmpDuration = (tmpMedia.duration / 60).toFixed(2);
-            if (elementToUpdate != undefined) elementToUpdate.innerHTML = tmpDuration;
-            q.resolve(tmpDuration);
-        }
-        catch {
-            q.reject("0.00");
+    if (!fs.existsSync(mediafile)) { 
+        q.reject("0.00");
+    } else {
+        var tmpMedia = new Audio(mediafile);
+        tmpMedia.oncanplaythrough = (e) => {
+            try {
+                var tmpDuration = (tmpMedia.duration / 60).toFixed(2);
+                if (elementToUpdate != undefined) elementToUpdate.innerHTML = tmpDuration;
+                q.resolve(tmpDuration);
+            }
+            catch {
+                q.reject("0.00");
+            }
         }
     }
     return q.promise();
@@ -442,13 +575,42 @@ function loadMp3Duration(tablerows)
     }
 }
 
+//populate all topics
+function populateTopics(txt) {
+    console.log('Rendering the topics...');
+    logger.info('populateTopics()->Entered.');
+
+    var html = '';
+    logger.info('populateTopics()->generating dynamic html for all topics with search criteria>' + txt.length > 0 ? txt : 'no search criteria');
+    for (topic in topicData) {
+        var tpkname = formattedName(topic);
+        if (txt == '') {
+            html += "<tr><td data-topic='" + topic + "'>" + tpkname + "</td></tr>";
+        } else {
+            if (tpkname.indexOf(txt) >= 0) {
+                html += "<tr><td data-topic='" + topic + "'>" + tpkname + "</td></tr>";
+            }
+        }
+        // logger.info('populateSpeakers()->html generated for speaker>'+spkname);
+    }
+    if (html == '') {
+        html = "<tr><td>Sorry, No data!</td></tr>";
+        logger.info('populateTopics()->Sorry, No data!');
+    } else {
+        $("#tblTopics").html(html);
+        logger.info('populateTopics()->dynamic html generated and popultated in GUI.');
+    }
+    logger.info('populateTopics()->exited.');
+}
+
 //populate all speakers
 function populateSpeakers(txt) {
     console.log('Rendering the speakers...');
     logger.info('populateSpeakers()->Entered.');
 
     var html = '';
-    logger.info('populateSpeakers()->generating dynamic html for all speakers with search criteria>'+txt.length>0?txt:'no search criteria' );
+    logger.info('populateSpeakers()->generating dynamic html for all speakers with search criteria>' + txt.length > 0 ? txt : 'no search criteria');
+
     for (speaker in speakerData) {
         var spkname = formattedName(speaker);
         if (txt == '') {
@@ -471,28 +633,67 @@ function populateSpeakers(txt) {
 }
 
 // populate sermons using regular HTML table istead of DataTable
-function populateSermons(searchString) {
+function populateSermons(searchString,data) {
     var q = $.Deferred();
     countPlayable = countDownload = 0;
     logger.info('populateSermons()->Entered.');
     console.log("Rendering sermons...")
     var html = '';
 
+    data.sort((sermon1, sermon2) => { 
+        switch (sermonSortCol) {
+            case 'title':
+                if (sermonSortorder == 'asc') {
+                    return sermon1.title < sermon2.title ? -1 : 1;
+                } else {
+                    return sermon1.title < sermon2.title ? 1 : -1;
+                }
+                break;
+            case 'format':
+                if (sermonSortorder == 'asc') {
+                    return sermon1.format < sermon2.format ? -1 : 1;
+                } else {
+                    return sermon1.format < sermon2.format ? 1 : -1;
+                }
+                break;
+            case 'topic':
+                if (sermonSortorder == 'asc') {
+                    return sermon1.topic < sermon2.topic ? -1 : 1;
+                } else {
+                    return sermon1.topic < sermon2.topic ? 1 : -1;
+                }
+                break; 
+            case 'speaker':
+                if (sermonSortorder == 'asc') {
+                    return sermon1.preacher_name < sermon2.preacher_name ? -1 : 1;
+                } else {
+                    return sermon1.preacher_name < sermon2.preacher_name ? 1 : -1;
+                }
+                break;            
+            default:
+                if (sermonSortorder == 'asc') {
+                    return sermon1.title < sermon2.title ? 1 : -1;
+                } else {
+                    return sermon1.title < sermon2.title ? -1 : 1;
+                }
+        }
+    });
+
     $("#btnDownloadAll").attr('disabled', 'disabled');
     try {
-        if (sermonData.length == 0) {
+        if (data.length == 0) {
             html = "<h3>No Data Available</h3>";
             logger.info('populateSermons()->No data to populate');
             $("#spanPlayAlert").html(failIcon + " No sermons to load!");
         } else {
             logger.info('populateSermons()->popuating sermons with search criteria>' + searchString);
-            for (i = 0; i < sermonData.length; i++) {
+            for (i = 0; i < data.length; i++) {
                 if (searchString == '') {
 
-                    html += formattedSermonRow(sermonData[i]);
+                    html += formattedSermonRow(data[i]);
                 } else {
-                    if (sermonData[i].topic.toLowerCase().indexOf(searchString.toLowerCase()) >= 0 || sermonData[i].title.toLowerCase().indexOf(searchString.toLowerCase()) >= 0 || sermonData[i].format.toLowerCase().indexOf(searchString.toLowerCase()) >= 0) {
-                        html += formattedSermonRow(sermonData[i]);
+                    if (data[i].topic.toLowerCase().indexOf(searchString.toLowerCase()) >= 0 || data[i].title.toLowerCase().indexOf(searchString.toLowerCase()) >= 0 || data[i].format.toLowerCase().indexOf(searchString.toLowerCase()) >= 0) {
+                        html += formattedSermonRow(data[i]);
                     }
                 }
             }
@@ -515,7 +716,11 @@ function formattedSermonRow(sermon)
     var ficon, duration, html;
     var sermontitle = removeQuotes(sermon.title);
     var sermonFilename = formattedSermontitle(sermontitle) + "." + sermon.format;
-    var sermonFilepath = speakerFolder + sermonFilename;
+    var sermonFilepath;
+    if (currentTab != 'Speakers') { 
+        speakerFolder = getSpeakerFolder(sermon);
+    }
+    sermonFilepath = speakerFolder + sermonFilename;
 
     // logger.info('formattedSermonRow()->started generating html for sermon>' + sermontitle);
     
@@ -537,14 +742,40 @@ function formattedSermonRow(sermon)
     var html = "";
     html += "<tr>";
     html += "<td class='text-center' data-sermontitle='" + sermontitle + "' data-downloadurl='" + sermon.download + "' data-filepath='" + sermonFilepath + "' data-speakerfolder='" + speakerFolder + "' data-filename='" + sermonFilename + "'>" + ficon + "</td>";
-    html += "<td>" + sermon.topic + "</td>";
-    html += "<td>" + sermontitle + "</td>";
+    if (currentTab == "Speakers") {
+        html += "<td>" + sermon.topic + "</td>";
+    } else {
+        html += "<td>" + sermon.speaker_name + "</td>";
+    }
+    
+    html += "<td id='cellSermonname'>" + detailedSermonTitle(sermon) + "</td>";
+    // html += "<td data-toggle='tooltip' data-placement='right' title='" + sermon.description.replace(/'s/g, '&apos;') + "'>" + detailedSermonTitle(sermon) + "</td>";
     html += "<td>" + sermon.format + "</td>";
     html += "<td>0.00</td>";
     html += "</tr>";
     // logger.info('formattedSermonRow()->completed generating html for > ' + sermontitle);
     // logger.info('formattedSermonRow()->Exited.');
     return html;
+}
+
+function detailedSermonTitle(sermon) {
+    if (sermon.scripture.length == 0) return sermon.title;
+    var retTitle = '';
+    retTitle = "<div class='sermontitle'>" + sermon.title + "</div>";
+    retTitle += "<div class='scripturelist'>" + sermon.scripture.replace(/'s/g, '&apos;') + "</div>";
+    retTitle += "<div id='divSermondescription' class='hideSermonDescription'>" + sermon.description.replace(/'s/g, '&apos;') +"</div>";
+    return retTitle;
+}
+
+function getSpeakerFolder(topic) {
+    var spkcode;
+
+    spkcode = topic.speaker_name.replace(/\s\s/g, ' ').toLowerCase();
+    spkcode = spkcode.replace(/[.]/g, "");
+    spkcode = spkcode.replace(/\s/g, '_');
+
+    spkcode = sermonbasepath + spkcode + "/";
+    return spkcode;
 }
 
 //removes all speacial characters and spaces from the sermon title
@@ -585,9 +816,6 @@ function formattedName(name)
     // logger.info('formattedName()->Entered.');
     var speakername = '', speakerarray;
     speakerarray = name.split('_');
-    // speakerarray.array.forEach(element => {
-    //     speakername = element.substr(0, 1).toUpperCase() + ' ';
-    // });
     for (index = 0; index < speakerarray.length; index++) {
         speakername += speakerarray[index][0].toUpperCase() + speakerarray[index].slice(1) + ' ';
     } 

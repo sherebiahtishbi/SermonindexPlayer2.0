@@ -28,7 +28,7 @@ function createWindow() {
         icon:'../images/sermonindex-logo1.png'
     });
     // window.setMenu(null);
-    window.loadFile('index.html');
+    window.loadFile('index2.html');
     //console.log(screen.getPrimaryDisplay());
     //console.log(os.platform());
 }
