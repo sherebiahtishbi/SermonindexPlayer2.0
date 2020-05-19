@@ -81,9 +81,11 @@ $(".sortable").click((e) => {
     }
 
     var searchString = $('#txtsermonsearch').text();
-    (currentTab == 'Speakers')
-        ? populateSermons(searchString, sermonData).then((res) => { renderSermonTable(res); })
-        : populateSermons(searchString, topicSemonsData).then((res) => { renderSermonTable(res); });
+    populateSermons(searchString, sermonData).then((res) => { renderSermonTable(res); })
+        
+    // (currentTab == 'Speakers')
+    //     ? populateSermons(searchString, sermonData).then((res) => { renderSermonTable(res); })
+    //     : populateSermons(searchString, topicSemonsData).then((res) => { renderSermonTable(res); });
 });
 
 
