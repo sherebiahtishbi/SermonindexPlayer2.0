@@ -117,7 +117,7 @@ Change Log      : None
                             <span>&nbsp;</span>
                             <button id="btnPlayAll" class="btn btn-secondary" data-toggle="tooltip" data-placement="left"
                                 title="Play all downloaded sermons of this speaker" disabled>
-                                <i class="fas fa-play"></i>
+                                <i class="fas fa-bars"></i> &nbsp; <i class="fas fa-play"></i>
                             </button>
                             <button id="btnDownloadAll" class="btn btn-secondary" data-toggle="tooltip"
                                 data-placement="left"
@@ -171,12 +171,23 @@ Change Log      : None
                     <div>
                         <span id="spanAudioTitle" class="audiostatus"></span>
                     </div>
-                    <button id="btnStopMedia" class="btn btn-secondary" data-toggle="tooltip" data-placement="left"
+                    <!-- <button id="btnStopMedia" class="btn btn-secondary" data-toggle="tooltip" data-placement="left"
                         disabled>
                         <i class="fas fa-play"></i>
-                    </button>
+                    </button> -->
                     <input type="range" min="1" max="100" value="0" step="0.3" class="slider" id="mediaBar">
                     <span id="spanAudioStatus" class="audiostatus"></span>
+                    <div id="divMediaControls">
+                        <button id="btnPrev" class="btn btn-secondary" disabled>
+                            <i class="fas fa-backward"></i>
+                        </button>
+                        <button id="btnStopMedia" class="btn btn-secondary" disabled>
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button id="btnNext" class="btn btn-secondary" disabled>
+                            <i class="fas fa-forward"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 

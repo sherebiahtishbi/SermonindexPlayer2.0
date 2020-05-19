@@ -318,9 +318,9 @@ footer {
     color: whitesmoke;
 }
 
-#btnStopMedia {
+/* #btnStopMedia {
     margin-top: 5px;
-}
+} */
 
 .slider {
   -webkit-appearance: none;
@@ -367,8 +367,8 @@ footer {
 .audiostatus {
     width:100%;
     text-align: left !important;
-    font-size: 1.2rem;
-    color: black;
+    font-size: 1rem;
+    color: #212529;
 }
 
 .aboutpopup {
