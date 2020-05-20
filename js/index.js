@@ -3,17 +3,19 @@ Author      : Sherebiah Tisbi
 Datw Written: 04/27/2020
 Goal        : script pertains to index.html and caontains the code for almost entire app
 Change Log  : 05/09/2020 - MP3 duration for each download call
+              05/18/2020 - Play All functionality
+              05/20/2020 - code refactoring, open website externally, open pdf externally
 */
 const needle = require('needle');
 const download = require('download');
 const os = require('os');
 const fs = require('fs');
-const { ipcRenderer } = require('electron')
 const logger = require('electron-log');
+const machine = require('child_process');
 
-var speakerData, topicData, sermonData, topicSemonsData, speakerFolder, audio, audioDuration, playbar, media, medialist, currentTrackIndex, mediaButton, playallButton;
-var currentMediaLocation, menuState, countDownload, countPlayable, currentTab, sermonSortCol, sermonSortorder, speakerSortorder;
-// var elemTrack, elemSpeakerSearch, elemSermonSearch, elemSermonStatus, elemSpeakerAlert, elemSpeakerTable, elemSermonTable, elemDownloadAllButton, elemPlayAlert, elemOpenFolderButton, elemCurrentPlayingCell; 
+var speakerData, topicData, sermonData, speakerFolder,  audioDuration, media, medialist, currentTrackIndex, mediaButton, playallButton;
+var menuState, countDownload, countPlayable, currentTab, sermonSortCol, sermonSortorder;
+
 var elemCurrentPlayingCell, elemMediaButton; 
 var sermonbasepath = os.homedir() + '/SermonIndex_Sermons/';
 var playIcon = "<i class='fas fa-play'></i>";
@@ -68,6 +70,7 @@ $(document).ready(function () {
     bodyFadder = $("#divFadebody");
     aboutPopup = $("#divAbout");
     menuAbout = $("#aAbout");  
+    website = $("#aWebsite");
     
     slidingMenubar.removeClass('openmenu').addClass('closemenu');
     menuState = false;
@@ -110,6 +113,8 @@ $(document).ready(function () {
     txtSermonFilter.on('input', applySermonFilter);
     buttonPrevTrack.on('click', playPrevTrack);
     buttonNextTrack.on('click', playNextTrack);
+    website.on('click',openWebsite);
+
 });
 
 /* All event handlers */
@@ -251,6 +256,23 @@ function slidingMenuShowHide (e){
         e.currentTarget.classList.remove('menupointeropen');
         e.currentTarget.innerHTML = iconRightArrow;
     }
+}
+
+// handles sermonindex href in the About popup
+function openWebsite(e) {
+    e.preventDefault();
+    var url = e.currentTarget.attributes['href'].value;
+    switch (process.platform) {
+        case 'darwin':
+            machine.execSync('open https://' + url);
+            break;
+        case 'win32':
+            machine.execSync('start https://' + url);
+            break;
+        case 'linux':
+            machine.execSync('xdg-open https://' + url);
+            break;
+    }    
 }
 
 // handles download all button
@@ -435,7 +457,8 @@ function avOrIOaction(e) {
         console.log("Play : " + filepath);
         logger.info('sermon [' + sermonTitle +'] exists locallly.');
         if (filename.indexOf('mp3') < 0) {
-            alert("This sermon is not in audio format, can't play!");
+            // alert("This sermon is not in audio format, can't play!");
+            openFileExternally(filepath);
             logger.info('not an autio format.');
             return;
         } else {
@@ -492,6 +515,21 @@ function avOrIOaction(e) {
                 logger.error('Error downloading [' + sermonTitle + ']\\nError : ' + err);
             });
     }
+}
+
+// opens the non-audio file using native default application
+function openFileExternally(filename) {
+    switch (process.platform) {
+        case 'darwin':
+            machine.execSync('open ' + filename);
+            break;
+        case 'win32':
+            machine.execSync('start ' + filename);
+            break;
+        case 'linux':
+            machine.execSync('xdg-open ' + filename);
+            break;
+    }      
 }
 
 // handles when media starts playing
