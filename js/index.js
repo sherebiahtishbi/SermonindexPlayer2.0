@@ -32,6 +32,9 @@ var iconLeftArrow = '<i class="fas fa-angle-left">';
 var iconRightArrow = '<i class="fas fa-angle-right">';
 var iconPlayall = '<i class="fas fa-bars"></i> &nbsp; <i class="fas fa-play"></i>';
 
+/* Enums */
+const MEDIA_STATE = { PLAYING: 'playing', PAUSED: 'paused', ENDED: 'ended' ,UNKNOWN: 'unknown'}
+
 $(document).ready(function () {
     //alert('I am ready to roll!');
 
@@ -44,6 +47,8 @@ $(document).ready(function () {
     playallButton = $("#btnPlayAll");
     buttonPrevTrack = $("#btnPrev");
     buttonNextTrack = $("#btnNext");
+    mediaBarTitle = $("#spanAudioTitle");
+    mediaDuration = $("#spanAudioStatus");
 
     buttonDownloadAll = $("#btnDownloadAll");
     speakerHtmlTable = $("#tblSpeakers");
@@ -63,8 +68,6 @@ $(document).ready(function () {
     bodyFadder = $("#divFadebody");
     aboutPopup = $("#divAbout");
     menuAbout = $("#aAbout");  
-
-
     
     slidingMenubar.removeClass('openmenu').addClass('closemenu');
     menuState = false;
@@ -77,11 +80,20 @@ $(document).ready(function () {
 
     //load speakers when app loads
     loadSpeakers();
+    media = new Audio();
+    updateMediaInfo(MEDIA_STATE.UNKNOWN);
 
     // register event handlers for dynamically created elements
     speakerHtmlTable.on('click', 'tr td', loadSermons);
     sermonHtmlTable.on('click', 'tbody td:first-child', avOrIOaction);
     sermonHtmlTable.on('click', 'tbody td:nth-child(3)', showSermonDescription);
+
+    // register event handlers for media
+    media.addEventListener('play', setUIPlaying);
+    media.addEventListener('pause', setUIPaused);
+    media.addEventListener('ended', setUIEnded);
+    media.addEventListener('canplaythrough', setDuration);
+    media.addEventListener('timeupdate', setTimeupdate);
 
     //register event handlers for static ee
     toolTipableElements.tooltip();
@@ -157,20 +169,14 @@ function manageCategoryNavigation(e){
 
 // handles playing all sermons of selected speaker
 function playAllsermons(e) {
-    if (media != undefined) { 
+    if (media.src != '' && medialist.length>0) { 
         if (media.paused) {
             media.play();
-            e.currentTarget.innerHTML = pauseIcon;
-            $('i', mediaButton).toggleClass('fa-play fa-pause');
-            elemCurrentPlayingCell.innerHTML = pauseIcon;
-            return;
         } else {
             media.pause();
-            e.currentTarget.innerHTML = iconPlayall;
-            elemCurrentPlayingCell.innerHTML = playIcon;
-            $('i', mediaButton).toggleClass('fa-play fa-pause');
-            return;
         }
+        updateMediaInfo(MEDIA_STATE.PLAYING);
+        return;        
     }
     medialist = [];
     var sermonsFromTable = $("#tblSermons tbody td:first-child");
@@ -216,18 +222,17 @@ function playPrevTrack(e) {
         --currentTrackIndex;
         elemCurrentPlayingCell.innerHTML = playIcon;
         elemCurrentPlayingCell = medialist[currentTrackIndex].domelement;
-        elemCurrentPlayingCell.innerHTML = pauseIcon;
         playMedia(medialist[currentTrackIndex].filename, medialist[currentTrackIndex].sermontitle);
         (currentTrackIndex == 0) ? buttonPrevTrack.prop('disabled', true) : buttonPrevTrack.prop('disabled', false);
     }
 }
 
+// handles nextTrack button
 function playNextTrack(e) {
     if (medialist.length > 0 && currentTrackIndex < medialist.length -2) {
         ++currentTrackIndex;
         elemCurrentPlayingCell.innerHTML = playIcon;
         elemCurrentPlayingCell = medialist[currentTrackIndex].domelement;
-        elemCurrentPlayingCell.innerHTML = pauseIcon;
         playMedia(medialist[currentTrackIndex].filename, medialist[currentTrackIndex].sermontitle);
         (currentTrackIndex == medialist.length - 1) ? buttonNextTrack.prop('disabled', true) : buttonNextTrack.prop('disabled', false);
     }    
@@ -300,16 +305,14 @@ function downloadAll(e) {
 // handles seeking the media position on media bar
 function changeMediaPosition(e) {
     console.log("User changed the media location to >" + e.currentTarget.value);
-    if (media != undefined) media.currentTime = e.currentTarget.value;
+    if (media.src != '') media.currentTime = e.currentTarget.value;
 }
 
 // handle toggling of play/pause button on media bar
 function togglePlay(e) {
-    if (media != undefined) {
+    if (media.src != '') {
         (media.paused) ? media.play() : media.pause();
     }
-    $('i', mediaButton).toggleClass('fa-play fa-pause');
-    ($('i', mediaButton).attr('class') == 'fas fa-play') ? elemCurrentPlayingCell.innerHTML = playIcon : elemCurrentPlayingCell.innerHTML = pauseIcon;
 }
 
 // handles filtering speaker/topic list as user type in search box
@@ -419,6 +422,8 @@ function loadSpeakers()
 
 // downloads sermon if it doesnt exist locally or it starts playing sermon
 function avOrIOaction(e) {
+    medialist = [];
+    currentTrackIndex = undefined;
     var filepath = e.currentTarget.attributes['data-filepath'].value;
     var folderpath = e.currentTarget.attributes['data-speakerfolder'].value;
     var filename = e.currentTarget.attributes['data-filename'].value;
@@ -439,32 +444,22 @@ function avOrIOaction(e) {
             if (media == undefined) {
                 playMedia(filepath, sermonTitle, 0);
                 logger.info('Now will play [' + filepath + ']');
-                elemCurrentPlayingCell.innerHTML = pauseIcon;
-                $('i', mediaButton).addClass('fa-pause').removeClass('fa-play');
             } else {
                 if (media.paused) {
                     if (media.src.replace('file://','') == filepath) {
                         media.play();
                         logger.info('Unpaused [' + filepath + ']');
-                        elemCurrentPlayingCell.innerHTML = pauseIcon;
-                        $('i', mediaButton).addClass('fa-pause').removeClass('fa-play');
                     } else {
                         playMedia(filepath, sermonTitle, 0);
                         logger.info('Now will play [' + filepath + ']');
-                        elemCurrentPlayingCell.innerHTML = pauseIcon;
-                        $('i', mediaButton).addClass('fa-pause').removeClass('fa-play');
                     }
                 } else {
                     if (media.src.replace('file://','') == filepath) {
                         media.pause();
                         logger.info('Paused [' + filepath + ']');
-                        elemCurrentPlayingCell.innerHTML = playIcon;
-                        $('i', mediaButton).addClass('fa-play').removeClass('fa-pause');
                     } else {
                         playMedia(filepath, sermonTitle, 0);
                         logger.info('Now will play [' + filepath + ']');
-                        elemCurrentPlayingCell.innerHTML = pauseIcon;
-                        $('i', mediaButton).addClass('fa-pause').removeClass('fa-play');
                     }                    
                 }
             }
@@ -472,13 +467,13 @@ function avOrIOaction(e) {
     } else {
         console.log("Download :" + filepath);
         logger.info('Sermon [' + sermonTitle + '] do not exist locally so will download.');
-        $("#divSermonStatus").show();
+        // $("#divSermonStatus").show();
         e.currentTarget.children[0].outerHTML = "<span class='sermon-downloading'>" + spinnerIcon + "</span>";
-        $("#spanPlayAlert").html(spinnerIcon + " downloading [ " + sermonTitle + " ]");
+        sermonListStatusbar.html(spinnerIcon + " downloading [ " + sermonTitle + " ]");
         downloadSermon(downloadUrl, folderpath, filename, -1,sermonTitle)
             .then((res) => { 
                 e.currentTarget.children[0].outerHTML = "<span class='playable'>" + playIcon + "</span>";
-                $("#spanPlayAlert").html(successIcon + " completed downloading [ " + sermonTitle + " ]");
+                sermonListStatusbar.html(successIcon + " completed downloading [ " + sermonTitle + " ]");
                 if (countDownload > 0) {
                     --countDownload;
                     buttonDownloadAll.html(downloadIcon + " (" + countDownload + ")");
@@ -499,68 +494,76 @@ function avOrIOaction(e) {
     }
 }
 
-function updateMediaInfo() {
-    if (media == undefined) {
-        mediaButton.innerHTML = playIcon;
-        playallButton.innerHTML = playIcon;
-        elemCurrentPlayingCell.innerHTML = playIcon;
-        return;
+// handles when media starts playing
+function setUIPlaying(e) {
+    console.log('Unpaused.');
+    updateMediaInfo(MEDIA_STATE.PLAYING);
+}
+
+// handles when media is paused
+function setUIPaused(e) {
+    updateMediaInfo(MEDIA_STATE.PAUSED);
+}
+
+// handles when audio has finished playing 
+function setUIEnded(e) {
+    elemCurrentPlayingCell.innerHTML = playIcon;
+    if (currentTrackIndex < medialist.length - 1) {
+        ++currentTrackIndex;
+        elemCurrentPlayingCell = medialist[currentTrackIndex].domelement;
+        playMedia(medialist[currentTrackIndex].filename, medialist[currentTrackIndex].sermontitle);
     }
-    if (media.paused) {
-        mediaButton.innerHTML = playIcon;
-        playallButton.innerHTML = playIcon;
-        elemCurrentPlayingCell.innerHTML = playIcon;
-    } else {
-        mediaButton.innerHTML = pauseIcon;
-        playallButton.innerHTML = pauseIcon;
+    updateMediaInfo(MEDIA_STATE.ENDED);
+    console.log('Audio finished playing.');
+}
+
+// handls audio duration display
+function setDuration(e) {
+    audioDuration = e.currentTarget.duration;
+    track.attr('max', audioDuration);
+    mediaBarTitle.text(sermontitle);
+    elemCurrentPlayingCell.innerHTML = pauseIcon;
+}
+
+// handles updating the audio slider on timeupdate
+function setTimeupdate(e) {
+    var cTime = e.currentTarget.currentTime;
+    track.val(cTime);
+    mediaDuration.text('[ ' + (cTime / 60).toFixed(2) + ' / ' + (audioDuration / 60).toFixed(2) + ' ]');
+}
+
+// updates all media buttons
+function updateMediaInfo(mediastate) {
+    mediaButton.html(playIcon);
+    playallButton.html(playIcon);
+    if (elemCurrentPlayingCell!= undefined) elemCurrentPlayingCell.innerHTML = playIcon;            
+    buttonPrevTrack.prop('disabled', true);
+    buttonNextTrack.prop('disabled', true);
+
+    if (medialist != undefined && medialist.length > 0) {
+        (currentTrackIndex == 0) ? buttonPrevTrack.prop('disabled', true) : buttonPrevTrack.prop('disabled', false);
+        (currentTrackIndex == medialist.length - 1) ? buttonNextTrack.prop('disabled', true) : buttonNextTrack.prop('disabled', false);
+        elemCurrentPlayingCell = medialist[currentTrackIndex].domelement;
+    }
+
+    if (mediastate == MEDIA_STATE.PLAYING) { 
+        mediaButton.html(pauseIcon);
+        playallButton.html(pauseIcon);
         elemCurrentPlayingCell.innerHTML = pauseIcon;
     }
 }
 
 // plays selected media
 function playMedia(sermonToPlay, sermontitle) {
-    if (media != undefined) {
+    if (media.src != '') {
         media.pause();
     }
-    media = new Audio(sermonToPlay);
+    media.src = sermonToPlay;
     media.canPlayType('audio/mpeg');
     media.play()
-    $('#btnStopMedia i').removeClass('fa-play').addClass('fa-pause');
     mediaButton.removeAttr('disabled');
-    $("#spanPlayAlert").text("Now Playing > " + sermontitle);
+    sermonListStatusbar.text("Now Playing > " + sermontitle);
     logger.info('Started playing :' + sermontitle);
-
-    media.addEventListener('play', (e) => { 
-        console.log('Unpaused.');
-        $('#btnStopMedia i').innerHTML = pauseIcon;
-        $('#btnP')
-    });
-
-    // check when audio finished playing 
-    media.addEventListener('ended', (e) => { 
-        elemCurrentPlayingCell.innerHTML = playIcon;
-        if (currentTrackIndex < medialist.length - 1) {
-            ++currentTrackIndex;
-            elemCurrentPlayingCell = medialist[currentTrackIndex].domelement;
-            playMedia(medialist[currentTrackIndex].filename, medialist[currentTrackIndex].sermontitle);
-        }
-        console.log('Audio finished playing.');
-    });
-
-    //assign the media labels
-    media.addEventListener('canplaythrough', (e) => { 
-        audioDuration = e.currentTarget.duration;
-        track.attr('max', audioDuration);
-        $("#spanAudioTitle").text(sermontitle);
-        elemCurrentPlayingCell.innerHTML = pauseIcon;
-    });
-
-    //update the slider on timeupdate
-    media.addEventListener('timeupdate', (e) => { 
-        var cTime = e.currentTarget.currentTime;
-        track.val(cTime);
-        $("#spanAudioStatus").text('[ ' + (cTime / 60).toFixed(2) + ' / ' + (audioDuration / 60).toFixed(2) + ' ]');
-    });
 }
 
 // downloads the sermon 
@@ -948,7 +951,7 @@ function formattedName(name)
     return speakername;
 }
 
-/* DEPRECATED 
+/* DEPRECATED CODE
 
 //handles opening of sermon folder
 $("#btnOpenFolder").click(function () {
