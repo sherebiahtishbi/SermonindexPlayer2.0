@@ -312,8 +312,8 @@ function downloadAll(e) {
                     }
                     ++countPlayable;
                     getMp3Duration(sermonpath + sermonfilename, undefined)
-                        .then((duration) => {
-                            sermonsFromTable[res.index].parentElement.children[4].innerHTML = duration;
+                        .then((tDuration) => {
+                            sermonsFromTable[res.index].parentElement.children[4].innerHTML = tDuration;
                             logger.info('MP3 duration calculated successfully for > ' + sermonfilename);
                         });
                     sermonListStatusbar.html(successIcon + " completed downloading [" + ++completedDownloading + " of " + totalToDownload + " ]");
@@ -756,7 +756,7 @@ function populateTopics(txt) {
         if (txt == '') {
             html += "<tr><td data-topic='" + topic + "'>" + tpkname + "</td></tr>";
         } else {
-            if (tpkname.indexOf(txt) >= 0) {
+            if (tpkname.toLowerCase().indexOf(txt.toLowerCase()) >= 0) {
                 html += "<tr><td data-topic='" + topic + "'>" + tpkname + "</td></tr>";
             }
         }
@@ -785,7 +785,7 @@ function populateSpeakers(txt) {
         if (txt == '') {
             html += "<tr><td data-speaker='" + speaker + "'>" + spkname + "</td></tr>";
         } else {
-            if (speaker.indexOf(txt) >= 0) {
+            if (speaker.toLowerCase().indexOf(txt.toLowerCase()) >= 0) {
                 html += "<tr><td data-speaker='" + speaker + "'>" + spkname + "</td></tr>";
             }
         }
